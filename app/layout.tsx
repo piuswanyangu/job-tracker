@@ -6,7 +6,7 @@ import { ApplicationsProvider } from "@/context/ApplicationsContext";
 
 export const metadata = {
   title: "Job Tracker",
-  description: "Track your job applications easily",
+  description: "Organize and track your job search journey",
 };
 
 export default function RootLayout({

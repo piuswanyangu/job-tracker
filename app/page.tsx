@@ -18,7 +18,7 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="/dashboard"
+              href="/register"
               className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:shadow-2xl hover:scale-105 transition-all duration-200"
             >
               Start Tracking Free
@@ -111,7 +111,7 @@ export default function HomePage() {
             Join thousands of professionals who've streamlined their career journey
           </p>
           <a
-            href="/dashboard"
+            href="/register"
             className="inline-block px-8 py-4 bg-white text-blue-600 rounded-xl font-semibold hover:shadow-2xl hover:scale-105 transition-all duration-200"
           >
             Get Started for Free
@@ -119,18 +119,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Footer
-      <footer className="bg-gray-900 text-gray-400 py-12 px-6">
-        <div className="max-w-7xl mx-auto text-center">
-          <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent mb-4">
-            JobTracker
-          </div>
-          <p className="mb-4">Making job searching simpler, one application at a time.</p>
-          <div className="text-sm">
-            © 2024 JobTracker. All rights reserved.
-          </div>
-        </div>
-      </footer> */}
+      
     </div>
   );
 }
