@@ -1,14 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
-type JobApplication = {
-  id: number;
-  company: string;
-  role: string;
-  status: "Applied" | "Interviewed" | "Offer" | "Rejected";
-  date: string;
-};
+import { applicationsService, Application } from "@/lib/applicationsService";
 
 const STATUS_COLORS = {
   Applied: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
@@ -69,12 +62,12 @@ function ApplicationModal({
 }: {
   open: boolean;
   onClose: () => void;
-  onSave: (data: { company: string; role: string; status: JobApplication["status"] }) => void;
-  initialData?: { company: string; role: string; status: JobApplication["status"] };
+  onSave: (data: { company: string; role: string; status: Application["status"] }) => void;
+  initialData?: { company: string; role: string; status: Application["status"] };
 }) {
   const [company, setCompany] = useState("");
   const [role, setRole] = useState("");
-  const [status, setStatus] = useState<JobApplication["status"]>("Applied");
+  const [status, setStatus] = useState<Application["status"]>("Applied");
 
   useEffect(() => {
     if (initialData) {
@@ -132,7 +125,7 @@ function ApplicationModal({
             <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
             <select
               value={status}
-              onChange={(e) => setStatus(e.target.value as JobApplication["status"])}
+              onChange={(e) => setStatus(e.target.value as Application["status"])}
               className="border border-gray-300 p-3 rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
             >
               <option>Applied</option>
@@ -154,7 +147,6 @@ function ApplicationModal({
             onClick={() => {
               if (company && role) {
                 onSave({ company, role, status });
-                onClose();
               }
             }}
             className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
@@ -169,20 +161,37 @@ function ApplicationModal({
 
 /* ---------------- PAGE ---------------- */
 export default function ApplicationsPage() {
-  const [applications, setApplications] = useState<JobApplication[]>([
-    { id: 1, company: "Google", role: "Software Engineer", status: "Interviewed", date: "2024-01-15" },
-    { id: 2, company: "Meta", role: "Frontend Developer", status: "Applied", date: "2024-01-10" },
-    { id: 3, company: "Amazon", role: "Full Stack Developer", status: "Offer", date: "2024-01-08" },
-  ]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [editData, setEditData] = useState<JobApplication | null>(null);
+  const [editData, setEditData] = useState<Application | null>(null);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("All");
+
+  // Fetch applications on mount
+  useEffect(() => {
+    fetchApplications();
+  }, []);
+
+  const fetchApplications = async () => {
+    try {
+      setLoading(true);
+      const data = await applicationsService.getApplications();
+      setApplications(data);
+      setError("");
+    } catch (err: any) {
+      setError("Failed to load applications");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   /* ---------- FILTERED APPLICATIONS ---------- */
   const filteredApplications = applications.filter((app) => {
@@ -194,36 +203,49 @@ export default function ApplicationsPage() {
   });
 
   /* ---------- ACTIONS ---------- */
-  const handleSave = (data: {
+  const handleSave = async (data: {
     company: string;
     role: string;
-    status: JobApplication["status"];
+    status: Application["status"];
   }) => {
-    if (editData) {
-      setApplications((apps) =>
-        apps.map((app) =>
-          app.id === editData.id ? { ...app, ...data } : app
-        )
-      );
-      setEditData(null);
-    } else {
-      setApplications((apps) => [
-        ...apps,
-        { id: Date.now(), ...data, date: new Date().toISOString().slice(0, 10) },
-      ]);
+    try {
+      if (editData) {
+        // Update existing application
+        await applicationsService.updateApplication(editData.id, data);
+        setEditData(null);
+      } else {
+        // Create new application
+        await applicationsService.createApplication({
+          ...data,
+          date: new Date().toISOString().slice(0, 10),
+        } as Omit<Application, 'id'>);
+      }
+      
+      // Refresh applications list
+      await fetchApplications();
+      setModalOpen(false);
+      setError("");
+    } catch (err: any) {
+      setError("Failed to save application");
+      console.error(err);
     }
   };
 
-  const updateStatus = (id: number, status: JobApplication["status"]) => {
-    setApplications((apps) =>
-      apps.map((app) => (app.id === id ? { ...app, status } : app))
-    );
-  };
+  const deleteApplication = async () => {
+    if (!deleteId) return;
 
-  const deleteApplication = () => {
-    setApplications((apps) => apps.filter((app) => app.id !== deleteId));
-    setDeleteId(null);
-    setShowDeleteModal(false);
+    try {
+      await applicationsService.deleteApplication(deleteId);
+      
+      // Refresh applications list
+      await fetchApplications();
+      setShowDeleteModal(false);
+      setDeleteId(null);
+      setError("");
+    } catch (err: any) {
+      setError("Failed to delete application");
+      console.error(err);
+    }
   };
 
   return (
@@ -236,6 +258,16 @@ export default function ApplicationsPage() {
           </h1>
           <p className="text-gray-600">Manage and track all your job applications</p>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3">
+            <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-red-800 text-sm">{error}</span>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -308,73 +340,80 @@ export default function ApplicationsPage() {
         {/* Table */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="p-4 text-left font-semibold text-gray-700">Company</th>
-                  <th className="p-4 text-left font-semibold text-gray-700">Role</th>
-                  <th className="p-4 text-left font-semibold text-gray-700">Status</th>
-                  <th className="p-4 text-left font-semibold text-gray-700">Applied Date</th>
-                  <th className="p-4 text-center font-semibold text-gray-700">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredApplications.map((app, index) => (
-                  <tr key={app.id} className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
-                    <td className="p-4">
-                      <span className="font-semibold text-gray-900">{app.company}</span>
-                    </td>
-                    <td className="p-4 text-gray-700">{app.role}</td>
-                    <td className="p-4">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${STATUS_COLORS[app.status].bg} ${STATUS_COLORS[app.status].text} border ${STATUS_COLORS[app.status].border}`}>
-                        {app.status}
-                      </span>
-                    </td>
-                    <td className="p-4 text-gray-600">{app.date}</td>
-                    <td className="p-4">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          onClick={() => {
-                            setEditData(app);
-                            setModalOpen(true);
-                          }}
-                          title="Edit"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                        <button
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          onClick={() => {
-                            setDeleteId(app.id);
-                            setShowDeleteModal(true);
-                          }}
-                          title="Delete"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
+            {loading ? (
+              <div className="p-12 text-center">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <p className="mt-4 text-gray-600">Loading applications...</p>
+              </div>
+            ) : (
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-gray-50">
+                    <th className="p-4 text-left font-semibold text-gray-700">Company</th>
+                    <th className="p-4 text-left font-semibold text-gray-700">Role</th>
+                    <th className="p-4 text-left font-semibold text-gray-700">Status</th>
+                    <th className="p-4 text-left font-semibold text-gray-700">Applied Date</th>
+                    <th className="p-4 text-center font-semibold text-gray-700">Actions</th>
                   </tr>
-                ))}
+                </thead>
+                <tbody>
+                  {filteredApplications.map((app, index) => (
+                    <tr key={app.id} className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
+                      <td className="p-4">
+                        <span className="font-semibold text-gray-900">{app.company}</span>
+                      </td>
+                      <td className="p-4 text-gray-700">{app.role}</td>
+                      <td className="p-4">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${STATUS_COLORS[app.status].bg} ${STATUS_COLORS[app.status].text} border ${STATUS_COLORS[app.status].border}`}>
+                          {app.status}
+                        </span>
+                      </td>
+                      <td className="p-4 text-gray-600">{app.date}</td>
+                      <td className="p-4">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            onClick={() => {
+                              setEditData(app);
+                              setModalOpen(true);
+                            }}
+                            title="Edit"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            onClick={() => {
+                              setDeleteId(app.id);
+                              setShowDeleteModal(true);
+                            }}
+                            title="Delete"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
 
-                {filteredApplications.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="p-12 text-center">
-                      <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      <p className="text-lg font-medium text-gray-900 mb-1">No applications found</p>
-                      <p className="text-gray-500">Try adjusting your search or filter criteria</p>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  {!loading && filteredApplications.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="p-12 text-center">
+                        <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p className="text-lg font-medium text-gray-900 mb-1">No applications found</p>
+                        <p className="text-gray-500">Try adjusting your search or filter criteria</p>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </div>

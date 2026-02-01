@@ -3,21 +3,41 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { authService } from "@/lib/authService";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.MouseEvent) => {
     e.preventDefault();
+    setError("");
+
+    // Basic validation
+    if (!email || !password) {
+      setError("Please enter both email and password");
+      return;
+    }
+
     setIsLoading(true);
 
-    // Simulate a brief loading state for better UX
-    setTimeout(() => {
+    try {
+      // Call the backend API
+      await authService.login({ email, password });
+      
+      // Redirect to dashboard on success
       router.push("/dashboard");
-    }, 500);
+    } catch (err: any) {
+      // Handle errors from backend
+      const errorMessage = err.response?.data?.error || 
+                          err.response?.data?.message || 
+                          "Invalid email or password";
+      setError(errorMessage);
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -78,6 +98,16 @@ export default function LoginPage() {
                 Enter your credentials to access your account
               </p>
             </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3">
+                <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-red-800 text-sm">{error}</span>
+              </div>
+            )}
 
             <div className="space-y-5">
               <div>

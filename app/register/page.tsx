@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { authService } from "@/lib/authService";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -10,17 +11,51 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
 
   const handleSubmit = async (e: React.MouseEvent) => {
     e.preventDefault();
+    setError("");
+
+    // Validation
+    if (!name || !email || !password || !confirmPassword) {
+      setError("Please fill in all fields");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long");
+      return;
+    }
+
+    if (!acceptTerms) {
+      setError("Please accept the terms and conditions");
+      return;
+    }
+
     setIsLoading(true);
 
-    // Simulate a brief loading state for better UX
-    setTimeout(() => {
-      router.push("/login");
-    }, 500);
+    try {
+      // Call the backend API
+      await authService.register({ name, email, password });
+      
+      // Redirect to dashboard on success
+      router.push("/dashboard");
+    } catch (err: any) {
+      // Handle errors from backend
+      const errorMessage = err.response?.data?.error || 
+                          err.response?.data?.message || 
+                          "Registration failed. Please try again.";
+      setError(errorMessage);
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -88,6 +123,16 @@ export default function RegisterPage() {
                 Start organizing your job search today
               </p>
             </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3">
+                <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-red-800 text-sm">{error}</span>
+              </div>
+            )}
 
             <div className="space-y-5">
               <div>
