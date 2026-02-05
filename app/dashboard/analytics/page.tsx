@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { applicationsService, Analytics } from "@/lib/applicationsService";
+import { useState } from "react";
 import {
   PieChart,
   Pie,
@@ -13,10 +12,15 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Legend,
-  LineChart,
-  Line,
 } from "recharts";
+
+type Application = {
+  id: number;
+  company: string;
+  role: string;
+  status: "Applied" | "Interviewed" | "Offer" | "Rejected";
+  date: string;
+};
 
 const STATUS_COLORS = {
   Applied: "#3b82f6",
@@ -26,56 +30,24 @@ const STATUS_COLORS = {
 };
 
 export default function AnalyticsPage() {
-  const [analytics, setAnalytics] = useState<Analytics | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  // Hardcoded data matching the applications page
+  const applications: Application[] = [
+    { id: 1, company: "Google", role: "Software Engineer", status: "Interviewed", date: "2024-01-15" },
+    { id: 2, company: "Meta", role: "Frontend Developer", status: "Applied", date: "2024-01-10" },
+    { id: 3, company: "Amazon", role: "Full Stack Developer", status: "Offer", date: "2024-01-08" },
+    { id: 4, company: "Microsoft", role: "Backend Engineer", status: "Applied", date: "2024-01-12" },
+    { id: 5, company: "Apple", role: "iOS Developer", status: "Interviewed", date: "2024-01-05" },
+    { id: 6, company: "Netflix", role: "DevOps Engineer", status: "Rejected", date: "2024-01-03" },
+  ];
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, []);
-
-  const fetchAnalytics = async () => {
-    try {
-      setLoading(true);
-      const data = await applicationsService.getAnalytics();
-      setAnalytics(data);
-      setError("");
-    } catch (err: any) {
-      setError("Failed to load analytics");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+  // Calculate analytics from applications
+  const analytics = {
+    total: applications.length,
+    applied: applications.filter(a => a.status === "Applied").length,
+    interviewed: applications.filter(a => a.status === "Interviewed").length,
+    offer: applications.filter(a => a.status === "Offer").length,
+    rejected: applications.filter(a => a.status === "Rejected").length,
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 pt-24 pb-12 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
-          <p className="text-xl text-gray-600">Loading analytics...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !analytics) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 pt-24 pb-12">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 flex items-start space-x-3">
-            <svg className="w-6 h-6 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div>
-              <h3 className="text-red-800 font-semibold mb-1">Error Loading Analytics</h3>
-              <p className="text-red-700">{error}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const chartData = [
     { name: "Applied", value: analytics.applied, color: STATUS_COLORS.Applied },
@@ -174,7 +146,7 @@ export default function AnalyticsPage() {
                     cx="50%"
                     cy="50%"
                     outerRadius={120}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent = 0 }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                   >
                     {chartData.map((entry, index) => (
                       <Cell key={index} fill={entry.color} />
@@ -388,7 +360,7 @@ function InsightCard({
   );
 }
 
-function getBestStage(analytics: Analytics): string {
+function getBestStage(analytics: { applied: number; interviewed: number; offer: number }): string {
   const stages = [
     { name: "Applied", value: analytics.applied },
     { name: "Interviewed", value: analytics.interviewed },
