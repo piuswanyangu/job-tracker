@@ -3,7 +3,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { authService } from "@/lib/authService";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -42,20 +41,11 @@ export default function RegisterPage() {
 
     setIsLoading(true);
 
-    try {
-      // Call the backend API
-      await authService.register({ name, email, password });
-      
-      // Redirect to dashboard on success
-      router.push("/dashboard");
-    } catch (err: any) {
-      // Handle errors from backend
-      const errorMessage = err.response?.data?.error || 
-                          err.response?.data?.message || 
-                          "Registration failed. Please try again.";
-      setError(errorMessage);
+    // Bypassing backend: Simulate a short delay then redirect
+    setTimeout(() => {
       setIsLoading(false);
-    }
+      router.push("/login");
+    }, 1000);
   };
 
   return (

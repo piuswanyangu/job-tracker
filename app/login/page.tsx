@@ -3,7 +3,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { authService } from "@/lib/authService";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,20 +23,11 @@ export default function LoginPage() {
 
     setIsLoading(true);
 
-    try {
-      // Call the backend API
-      await authService.login({ email, password });
-      
-      // Redirect to dashboard on success
-      router.push("/dashboard");
-    } catch (err: any) {
-      // Handle errors from backend
-      const errorMessage = err.response?.data?.error || 
-                          err.response?.data?.message || 
-                          "Invalid email or password";
-      setError(errorMessage);
+    // Bypassing backend: Simulate a short delay then redirect to dashboard
+    setTimeout(() => {
       setIsLoading(false);
-    }
+      router.push("/dashboard");
+    }, 1000);
   };
 
   return (
