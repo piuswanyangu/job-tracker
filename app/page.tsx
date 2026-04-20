@@ -108,7 +108,7 @@ export default function HomePage() {
             Ready to Transform Your Job Search?
           </h2>
           <p className="text-xl mb-8 opacity-90">
-            Join thousands of professionals who've streamlined their career journey
+            Join thousands of professionals who have streamlined their career journey
           </p>
           <a
             href="/register"

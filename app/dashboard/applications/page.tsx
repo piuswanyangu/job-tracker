@@ -1,6 +1,9 @@
 "use client";
 
+/* eslint-disable react-hooks/set-state-in-effect */
+
 import { useState, useEffect } from "react";
+import { applicationsService } from "@/lib/applicationsService";
 
 type Application = {
   id: number;
@@ -168,15 +171,9 @@ function ApplicationModal({
 
 /* ---------------- PAGE ---------------- */
 export default function ApplicationsPage() {
-  // Hardcoded initial data
-  const [applications, setApplications] = useState<Application[]>([
-    { id: 1, company: "Google", role: "Software Engineer", status: "Interviewed", date: "2024-01-15" },
-    { id: 2, company: "Meta", role: "Frontend Developer", status: "Applied", date: "2024-01-10" },
-    { id: 3, company: "Amazon", role: "Full Stack Developer", status: "Offer", date: "2024-01-08" },
-    { id: 4, company: "Microsoft", role: "Backend Engineer", status: "Applied", date: "2024-01-12" },
-    { id: 5, company: "Apple", role: "iOS Developer", status: "Interviewed", date: "2024-01-05" },
-    { id: 6, company: "Netflix", role: "DevOps Engineer", status: "Rejected", date: "2024-01-03" },
-  ]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -186,6 +183,21 @@ export default function ApplicationsPage() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("All");
+
+  const loadApplications = async () => {
+    try {
+      setError("");
+      setApplications(await applicationsService.getApplications());
+    } catch {
+      setError("Unable to load applications. Please sign in again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadApplications();
+  }, []);
 
   /* ---------- FILTERED APPLICATIONS ---------- */
   const filteredApplications = applications.filter((app) => {
@@ -197,35 +209,40 @@ export default function ApplicationsPage() {
   });
 
   /* ---------- ACTIONS ---------- */
-  const handleSave = (data: {
+  const handleSave = async (data: {
     company: string;
     role: string;
     status: Application["status"];
   }) => {
-    if (editData) {
-      // Update existing application
-      setApplications((apps) =>
-        apps.map((app) =>
-          app.id === editData.id ? { ...app, ...data } : app
-        )
-      );
-      setEditData(null);
-    } else {
-      // Create new application
-      setApplications((apps) => [
-        ...apps,
-        { id: Date.now(), ...data, date: new Date().toISOString().slice(0, 10) },
-      ]);
+    try {
+      if (editData) {
+        const updated = await applicationsService.updateApplication(editData.id, data);
+        setApplications((apps) => apps.map((app) => (app.id === editData.id ? updated : app)));
+        setEditData(null);
+      } else {
+        const created = await applicationsService.createApplication({
+          ...data,
+          date: new Date().toISOString().slice(0, 10),
+        });
+        setApplications((apps) => [created, ...apps]);
+      }
+      setModalOpen(false);
+    } catch {
+      setError("Unable to save application.");
     }
-    setModalOpen(false);
   };
 
-  const deleteApplication = () => {
+  const deleteApplication = async () => {
     if (!deleteId) return;
 
-    setApplications((apps) => apps.filter((app) => app.id !== deleteId));
-    setShowDeleteModal(false);
-    setDeleteId(null);
+    try {
+      await applicationsService.deleteApplication(deleteId);
+      setApplications((apps) => apps.filter((app) => app.id !== deleteId));
+      setShowDeleteModal(false);
+      setDeleteId(null);
+    } catch {
+      setError("Unable to delete application.");
+    }
   };
 
   return (
@@ -238,6 +255,18 @@ export default function ApplicationsPage() {
           </h1>
           <p className="text-gray-600">Manage and track all your job applications</p>
         </div>
+
+        {error && (
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        {loading && (
+          <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+            Loading applications...
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

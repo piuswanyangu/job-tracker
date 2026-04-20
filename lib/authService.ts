@@ -6,14 +6,17 @@ export interface LoginCredentials {
 }
 
 export interface RegisterCredentials {
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
   password: string;
+  password2: string;
 }
 
 export interface User {
   id: number;
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
 }
 
@@ -21,17 +24,17 @@ export const authService = {
   // Register new user
   register: async (credentials: RegisterCredentials) => {
     const response = await api.post('/auth/register/', credentials);
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
-    }
     return response.data;
   },
 
   // Login user
   login: async (credentials: LoginCredentials) => {
     const response = await api.post('/auth/login/', credentials);
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
+    if (response.data.access) {
+      localStorage.setItem('access', response.data.access);
+    }
+    if (response.data.refresh) {
+      localStorage.setItem('refresh', response.data.refresh);
     }
     return response.data;
   },
@@ -44,12 +47,13 @@ export const authService = {
 
   // Logout
   logout: () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('access');
+    localStorage.removeItem('refresh');
     window.location.href = '/login';
   },
 
   // Check if user is authenticated
   isAuthenticated: () => {
-    return !!localStorage.getItem('token');
+    return !!localStorage.getItem('access');
   },
 };

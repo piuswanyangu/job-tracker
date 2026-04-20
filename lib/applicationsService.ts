@@ -9,30 +9,70 @@ export interface Application {
 }
 
 export interface Analytics {
-  total: number;
+  total_applications: number;
   applied: number;
   interviewed: number;
   offer: number;
   rejected: number;
 }
 
+type ApiApplication = {
+  id: number;
+  company_name: string;
+  job_title: string;
+  status: 'applied' | 'interview' | 'offer' | 'rejected';
+  applied_at: string;
+};
+
+const statusFromApi: Record<ApiApplication['status'], Application['status']> = {
+  applied: 'Applied',
+  interview: 'Interviewed',
+  offer: 'Offer',
+  rejected: 'Rejected',
+};
+
+const statusToApi: Record<Application['status'], ApiApplication['status']> = {
+  Applied: 'applied',
+  Interviewed: 'interview',
+  Offer: 'offer',
+  Rejected: 'rejected',
+};
+
+function mapApplication(item: ApiApplication): Application {
+  return {
+    id: item.id,
+    company: item.company_name,
+    role: item.job_title,
+    status: statusFromApi[item.status],
+    date: item.applied_at?.slice(0, 10) ?? '',
+  };
+}
+
+function toApiPayload(data: Partial<Omit<Application, 'id'>>) {
+  return {
+    ...(data.company && { company_name: data.company }),
+    ...(data.role && { job_title: data.role }),
+    ...(data.status && { status: statusToApi[data.status] }),
+  };
+}
+
 export const applicationsService = {
   // Get all applications
   getApplications: async (): Promise<Application[]> => {
     const response = await api.get('/applications/applications/');
-    return response.data;
+    return response.data.map(mapApplication);
   },
 
   // Create new application
   createApplication: async (data: Omit<Application, 'id'>) => {
-    const response = await api.post('/applications/applications/', data);
-    return response.data;
+    const response = await api.post('/applications/applications/', toApiPayload(data));
+    return mapApplication(response.data);
   },
 
   // Update application
   updateApplication: async (id: number, data: Partial<Application>) => {
-    const response = await api.put(`/applications/applications/${id}/`, data);
-    return response.data;
+    const response = await api.patch(`/applications/applications/${id}/`, toApiPayload(data));
+    return mapApplication(response.data);
   },
 
   // Delete application

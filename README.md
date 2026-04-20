@@ -1,338 +1,153 @@
-📘 FRONTEND DOCUMENTATION PACK
+# Job Tracker
 
-Project: Job Application Tracking System – Frontend
+A modern Next.js dashboard for tracking job applications, reviewing application status, and visualizing job-search progress.
 
-1️⃣ README.md (Frontend)
-# Job Application Tracking System – Frontend
+## Problem It Solves
 
-A modern, responsive frontend application for tracking job applications, interviews, and analytics. Built with Next.js, TypeScript, and Tailwind CSS, and integrated with a RESTful backend API.
+Job seekers need a focused place to record where they applied, what stage each opportunity is in, and how their search is progressing. Job Tracker provides a clean application dashboard backed by the Job Tracker API.
 
----
+## Features
 
-## 🚀 Features
+- Register and log in through the backend API
+- Store JWT access and refresh tokens locally
+- View authenticated dashboard pages
+- Create, edit, and delete job applications
+- Track application statuses: Applied, Interviewed, Offer, Rejected
+- Analytics dashboard with status totals, rates, charts, and progress bars
+- Responsive pages for landing, auth, dashboard, applications, analytics, and settings
+- Configurable API base URL through environment variables
+- Cleaned duplicate legacy `src/` service layer
+- Removed unused mock NextAuth route and unused auth/database dependencies
 
-- User Authentication (Login / Register)
-- Job Application Management (CRUD)
-- Interview Scheduling & Tracking
-- Dashboard Analytics & Insights
-- Responsive UI (Desktop & Mobile)
-- Real-time API Integration
+## Tech Stack
 
----
+- Next.js 16 App Router
+- React 19
+- TypeScript
+- Tailwind CSS
+- Axios
+- Recharts
+- ESLint
 
-## 🛠️ Tech Stack
-
-- **Framework:** Next.js (React + TypeScript)
-- **Styling:** Tailwind CSS
-- **State Management:** React Hooks
-- **API Communication:** Axios
-- **Charts & Analytics:** Recharts / Chart.js
-- **Authentication:** JWT-based auth (via backend API)
-
----
-
-## 📂 Project Structure
-
-
-
-src/
-├── app/
-│ ├── auth/
-│ ├── dashboard/
-│ ├── applications/
-│ ├── interviews/
-│ └── analytics/
-├── components/
-│ ├── ui/
-│ ├── layout/
-│ └── shared/
-├── services/
-│ ├── api.ts
-│ ├── authService.ts
-│ └── dashboardService.ts
-├── hooks/
-├── utils/
-└── styles/
-
-
----
-
-## ⚙️ Installation & Setup
+## Installation
 
 ```bash
-git clone <repo-url>
-cd frontend
+git clone https://github.com/piuswanyangu/job-tracker.git
+cd job-tracker
 npm install
-npm run dev
+copy .env.example .env.local
+```
 
-🔌 Environment Variables
+On macOS or Linux, create the local env file with:
 
-Create .env.local:
+```bash
+cp .env.example .env.local
+```
 
-NEXT_PUBLIC_API_URL=http://localhost:8000/api
+## Environment Variables
 
-🔗 Backend Integration
-
-All API calls are handled inside:
-
-src/services/
-
+| Variable | Required | Description |
+| --- | --- | --- |
+| `NEXT_PUBLIC_API_URL` | Yes | Base URL for the Django API, including `/api` |
 
 Example:
 
-axios.get(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/`)
+```text
+NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api
+```
 
-🧪 Scripts
-npm run dev      # Start dev server
-npm run build    # Production build
-npm run lint     # Lint checks
+## Run Locally
 
-📈 Future Enhancements
+Start the backend API first, then run:
 
-Dark mode
+```bash
+npm run dev
+```
 
-PWA support
+Open:
 
-Real-time notifications
+```text
+http://localhost:3000
+```
 
-Advanced analytics dashboard
+## Backend Contract
 
-👨‍💻 Author
+This frontend expects the backend API from:
 
-Pius Ndubi
-Full Stack Developer
+```text
+https://github.com/piuswanyangu/job-trackerapi
+```
 
+Required endpoints:
 
----
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/auth/register/` | Create account |
+| `POST` | `/api/auth/login/` | Log in and return `access` and `refresh` tokens |
+| `GET` | `/api/auth/me/` | Get current user |
+| `GET` | `/api/applications/applications/` | List applications |
+| `POST` | `/api/applications/applications/` | Create application |
+| `PATCH` | `/api/applications/applications/{id}/` | Update application |
+| `DELETE` | `/api/applications/applications/{id}/` | Delete application |
+| `GET` | `/api/applications/analytics/` | Fetch analytics |
 
-# 2️⃣ PRD – Product Requirements Document (Frontend)
+## Folder Structure
 
-## 📌 Product Overview
+```text
+app/
+  dashboard/              Dashboard, applications, analytics, settings pages
+  login/                  Login page
+  register/               Registration page
+components/               Shared UI components
+context/                  React context providers
+lib/                      API client and service modules
+public/                   Static assets
+```
 
-The frontend application provides a **clean, intuitive dashboard** that allows users to track job applications, manage interviews, and visualize progress analytics.
+## Scripts
 
----
+```bash
+npm run dev      # Start local dev server
+npm run lint     # Run ESLint
+npm run build    # Build production app
+npm run start    # Start production server after build
+```
 
-## 🎯 Goals
+## Screenshots
 
-- Simple job application tracking
-- Clear visual analytics
-- Fast, responsive UI
-- Clean UX for productivity
+Add screenshots after deployment:
 
----
+- Landing page
+- Applications dashboard
+- Analytics dashboard
+- Mobile view
 
-## 👤 Target Users
+## Deployment
 
-- Job seekers  
-- University students  
-- Junior developers  
-- Professionals applying for multiple roles  
+### Vercel
 
----
+1. Import the repository into Vercel.
+2. Set `NEXT_PUBLIC_API_URL` to the deployed backend API URL with `/api`.
+3. Deploy the main branch.
 
-## 🧩 Core Features
+### Other Node Hosts
 
-### 1. Authentication Module
-- Login
-- Registration
-- Logout
-- Token handling
+```bash
+npm install
+npm run build
+npm run start
+```
 
----
+## Future Improvements
 
-### 2. Dashboard
-- Total applications
-- Applied count
-- Interviews count
-- Rejections count
-- Weekly trends
-- Quick navigation
+- Add refresh-token retry flow when access tokens expire
+- Add protected route redirects for unauthenticated users
+- Add filters and search for applications
+- Add follow-up reminder dates
+- Add loading skeletons for dashboard pages
+- Add end-to-end tests with Playwright
+- Add CI for lint, build, and end-to-end smoke tests
 
----
+## Author
 
-### 3. Applications Management
-- Add new application
-- Edit application
-- Delete application
-- Filter by:
-  - status
-  - company
-  - date
-  - role
-
----
-
-### 4. Interview Tracking
-- Schedule interviews
-- View upcoming interviews
-- Status tracking
-
----
-
-### 5. Analytics
-- Success rate charts
-- Application funnel
-- Weekly submission trends
-
----
-
-## 🧠 UX Principles
-
-- Minimal UI
-- Clear navigation
-- Mobile-first responsive design
-- Fast interactions
-- Clear visual feedback
-
----
-
-## 📊 Success Metrics
-
-- Task completion speed
-- Page load performance
-- User retention
-- API response rendering time
-
----
-
-# 3️⃣ User Stories (Frontend Only)
-
-## 🧑‍💻 Authentication
-
-**As a user,**  
-I want to log into my account  
-So that I can access my personal job tracking dashboard.
-
----
-
-**As a new user,**  
-I want to register  
-So that I can start tracking my job applications.
-
----
-
-## 📋 Applications
-
-**As a user,**  
-I want to add job applications  
-So that I can track all jobs I apply for.
-
----
-
-**As a user,**  
-I want to edit applications  
-So that I can update their status.
-
----
-
-**As a user,**  
-I want to delete applications  
-So that I can remove outdated entries.
-
----
-
-## 📊 Dashboard
-
-**As a user,**  
-I want to see a dashboard overview  
-So that I can quickly understand my job search progress.
-
----
-
-## 📈 Analytics
-
-**As a user,**  
-I want to view charts and trends  
-So that I can analyze my job application success rate.
-
----
-
-## 🗓 Interviews
-
-**As a user,**  
-I want to schedule interviews  
-So that I don’t forget upcoming interviews.
-
----
-
-# 4️⃣ Frontend Architecture Diagrams
-
-## 🔹 High-Level Frontend Architecture
-
-
-
-User
-|
-v
-Browser (Next.js UI)
-|
-v
-Frontend Pages & Components
-|
-v
-API Service Layer (Axios)
-|
-v
-Backend REST API
-
-
----
-
-## 🔹 Component Architecture
-
-
-
-Pages
-├── Dashboard
-├── Applications
-├── Interviews
-└── Analytics
-|
-v
-Shared Components
-├── Navbar
-├── Sidebar
-├── Cards
-├── Charts
-└── Tables
-
-
----
-
-## 🔹 Data Flow Diagram
-
-
-
-Component
-|
-v
-Service Layer (axios)
-|
-v
-Backend API
-|
-v
-JSON Response
-|
-v
-State → UI Render
-
-
----
-
-# 5️⃣ Suggested Folder Structure (Professional Grade)
-
-
-
-src/
-├── app/
-├── components/
-│ ├── layout/
-│ ├── cards/
-│ ├── charts/
-│ └── forms/
-├── services/
-├── hooks/
-├── types/
-└── utils/
+Built by [Pius Wanyangu](https://github.com/piuswanyangu).

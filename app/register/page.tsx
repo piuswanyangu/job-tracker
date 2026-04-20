@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { authService } from "@/lib/authService";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -41,11 +42,22 @@ export default function RegisterPage() {
 
     setIsLoading(true);
 
-    // Bypassing backend: Simulate a short delay then redirect
-    setTimeout(() => {
-      setIsLoading(false);
+    const [firstName, ...lastNameParts] = name.trim().split(" ");
+
+    try {
+      await authService.register({
+        first_name: firstName,
+        last_name: lastNameParts.join(" "),
+        email,
+        password,
+        password2: confirmPassword,
+      });
       router.push("/login");
-    }, 1000);
+    } catch {
+      setError("Unable to create account. The email may already be registered.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

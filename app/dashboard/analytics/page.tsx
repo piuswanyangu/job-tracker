@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+/* eslint-disable react-hooks/set-state-in-effect */
+
+import { useEffect, useState } from "react";
+import { applicationsService } from "@/lib/applicationsService";
 import {
   PieChart,
   Pie,
@@ -14,14 +17,6 @@ import {
   CartesianGrid,
 } from "recharts";
 
-type Application = {
-  id: number;
-  company: string;
-  role: string;
-  status: "Applied" | "Interviewed" | "Offer" | "Rejected";
-  date: string;
-};
-
 const STATUS_COLORS = {
   Applied: "#3b82f6",
   Interviewed: "#8b5cf6",
@@ -30,24 +25,19 @@ const STATUS_COLORS = {
 };
 
 export default function AnalyticsPage() {
-  // Hardcoded data matching the applications page
-  const applications: Application[] = [
-    { id: 1, company: "Google", role: "Software Engineer", status: "Interviewed", date: "2024-01-15" },
-    { id: 2, company: "Meta", role: "Frontend Developer", status: "Applied", date: "2024-01-10" },
-    { id: 3, company: "Amazon", role: "Full Stack Developer", status: "Offer", date: "2024-01-08" },
-    { id: 4, company: "Microsoft", role: "Backend Engineer", status: "Applied", date: "2024-01-12" },
-    { id: 5, company: "Apple", role: "iOS Developer", status: "Interviewed", date: "2024-01-05" },
-    { id: 6, company: "Netflix", role: "DevOps Engineer", status: "Rejected", date: "2024-01-03" },
-  ];
+  const [analytics, setAnalytics] = useState({
+    total_applications: 0,
+    applied: 0,
+    interviewed: 0,
+    offer: 0,
+    rejected: 0,
+  });
+  const [chartsReady, setChartsReady] = useState(false);
 
-  // Calculate analytics from applications
-  const analytics = {
-    total: applications.length,
-    applied: applications.filter(a => a.status === "Applied").length,
-    interviewed: applications.filter(a => a.status === "Interviewed").length,
-    offer: applications.filter(a => a.status === "Offer").length,
-    rejected: applications.filter(a => a.status === "Rejected").length,
-  };
+  useEffect(() => {
+    setChartsReady(true);
+    applicationsService.getAnalytics().then(setAnalytics).catch(() => undefined);
+  }, []);
 
   const chartData = [
     { name: "Applied", value: analytics.applied, color: STATUS_COLORS.Applied },
@@ -56,12 +46,12 @@ export default function AnalyticsPage() {
     { name: "Rejected", value: analytics.rejected, color: STATUS_COLORS.Rejected },
   ];
 
-  const successRate = analytics.total > 0 
-    ? ((analytics.offer / analytics.total) * 100).toFixed(1)
+  const successRate = analytics.total_applications > 0 
+    ? ((analytics.offer / analytics.total_applications) * 100).toFixed(1)
     : 0;
 
-  const interviewRate = analytics.total > 0
-    ? (((analytics.interviewed + analytics.offer) / analytics.total) * 100).toFixed(1)
+  const interviewRate = analytics.total_applications > 0
+    ? (((analytics.interviewed + analytics.offer) / analytics.total_applications) * 100).toFixed(1)
     : 0;
 
   const max = Math.max(analytics.applied, analytics.interviewed, analytics.offer, analytics.rejected, 1);
@@ -81,7 +71,7 @@ export default function AnalyticsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <MetricCard
             title="Total Applications"
-            value={analytics.total}
+            value={analytics.total_applications}
             icon={
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -136,25 +126,27 @@ export default function AnalyticsPage() {
               Application Distribution
             </h2>
 
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={chartData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={120}
-                    label={({ name, percent = 0 }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell key={index} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+            <div className="h-80 min-w-[300px]">
+              {chartsReady && (
+                <ResponsiveContainer width="100%" height="100%" minWidth={300}>
+                  <PieChart>
+                    <Pie
+                      data={chartData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={120}
+                      label={({ name, percent = 0 }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {chartData.map((entry, index) => (
+                        <Cell key={index} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
 
@@ -167,20 +159,22 @@ export default function AnalyticsPage() {
               Status Breakdown
             </h2>
 
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="value" radius={[8, 8, 0, 0]}>
-                    {chartData.map((entry, index) => (
-                      <Cell key={index} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="h-80 min-w-[300px]">
+              {chartsReady && (
+                <ResponsiveContainer width="100%" height="100%" minWidth={300}>
+                  <BarChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                      {chartData.map((entry, index) => (
+                        <Cell key={index} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
         </div>
@@ -240,7 +234,7 @@ export default function AnalyticsPage() {
           />
           <InsightCard
             title="Applications This Month"
-            value={analytics.total.toString()}
+            value={analytics.total_applications.toString()}
             description="Keep up the momentum!"
             icon={
               <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -3,6 +3,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ApplicationsProvider } from "@/context/ApplicationsContext";
+import { AuthProvider } from "@/lib/AuthContext";
 
 export const metadata = {
   title: "Job Tracker",
@@ -18,11 +19,13 @@ export default function RootLayout({
     <html lang="en">
       <body className="flex flex-col min-h-screen">
         {/* Wrap the app in ApplicationsProvider */}
-        <ApplicationsProvider>
-          <Navbar />
-          <main className="flex-1 p-6 bg-gray-50">{children}</main>
-          <Footer />
-        </ApplicationsProvider>
+        <AuthProvider>
+          <ApplicationsProvider>
+            <Navbar />
+            <main className="flex-1 p-6 bg-gray-50">{children}</main>
+            <Footer />
+          </ApplicationsProvider>
+        </AuthProvider>
       </body>
     </html>
   );

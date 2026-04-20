@@ -1,8 +1,8 @@
-/* eslint-disable @next/next/no-html-link-for-pages */
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { authService } from "@/lib/authService";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,11 +23,14 @@ export default function LoginPage() {
 
     setIsLoading(true);
 
-    // Bypassing backend: Simulate a short delay then redirect to dashboard
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await authService.login({ email, password });
       router.push("/dashboard");
-    }, 1000);
+    } catch {
+      setError("Invalid email or password");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -176,7 +179,7 @@ export default function LoginPage() {
 
             <div className="mt-6 text-center">
               <p className="text-gray-600">
-                Don't have an account?{" "}
+                Do not have an account?{" "}
                 <a href="/register" className="text-blue-600 hover:text-blue-700 font-semibold">
                   Create account
                 </a>
