@@ -15,6 +15,7 @@
 - Fixed static build chart warnings by rendering Recharts after client mount.
 - Replaced the broken README with professional setup, API, deployment, and roadmap documentation.
 - Added `.env.example`.
+- Added Vercel deployment config, `.env.production.example`, and `DEPLOYMENT.md`.
 
 ## Current Production Readiness
 

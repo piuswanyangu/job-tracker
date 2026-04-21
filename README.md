@@ -124,11 +124,14 @@ Add screenshots after deployment:
 
 ## Deployment
 
+This repository includes `vercel.json`, `.env.production.example`, and `DEPLOYMENT.md` for Vercel deployment.
+
 ### Vercel
 
 1. Import the repository into Vercel.
 2. Set `NEXT_PUBLIC_API_URL` to the deployed backend API URL with `/api`.
 3. Deploy the main branch.
+4. Copy the Vercel URL into the backend `CORS_ALLOWED_ORIGINS` and `CSRF_TRUSTED_ORIGINS` values.
 
 ### Other Node Hosts
 
